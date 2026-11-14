@@ -5,9 +5,7 @@ name: Windows CI
 # suite with `dotnet test` (which needs .NET TCP, available on the
 # Windows runner but blocked in the restricted Muse sandbox).
 #
-# Status: authored, NOT yet executed. This repository has no git remote
-# configured in the development environment, so the workflow cannot run
-# here. It runs automatically once the repo is pushed to GitHub.
+# Status: pushed to GitHub; runs automatically on push/PR to main.
 # Until a green run exists, the WPF build and `dotnet test` are BLOCKED
 # (not PASS) — see PHASE_1_PROGRESS.md.
 
@@ -24,18 +22,24 @@ jobs:
     # A hung run should fail fast instead of burning the 6 h default.
     timeout-minutes: 30
 
-    # Short TEMP keeps the Unix-domain-socket paths the integration
-    # tests use (Path.GetTempPath() + guid + ".sock") well under
-    # Windows' ~108-character sun_path limit. Without this they land
-    # around 99 characters under the default %TEMP% — inside the
-    # limit, but with almost no margin.
-    env:
-      TEMP: ${{ runner.temp }}
-      TMP: ${{ runner.temp }}
-
     steps:
       - name: Check out
         uses: actions/checkout@v4
+
+      # Short TEMP keeps the Unix-domain-socket paths the integration
+      # tests use (Path.GetTempPath() + guid + ".sock") well under
+      # Windows' ~108-character sun_path limit. Without this they land
+      # around 99 characters under the default %TEMP% — inside the
+      # limit, but with almost no margin. Job-level env cannot use the
+      # `runner` context, so TEMP/TMP are exported here via GITHUB_ENV
+      # for all subsequent steps.
+      - name: Configure short temporary directory
+        shell: pwsh
+        run: |
+          $temp = Join-Path $env:RUNNER_TEMP "t"
+          New-Item -ItemType Directory -Force -Path $temp | Out-Null
+          "TEMP=$temp" >> $env:GITHUB_ENV
+          "TMP=$temp" >> $env:GITHUB_ENV
 
       - name: Set up .NET 10 SDK
         uses: actions/setup-dotnet@v4
