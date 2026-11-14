@@ -1,0 +1,118 @@
+<Window x:Class="AiDownloadManager.Presentation.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:AiDownloadManager.Presentation.Controls"
+        Title="Ai Download Manager" Height="650" Width="1100"
+        MinWidth="900" MinHeight="500">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="10,8">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Add URL" Style="{StaticResource PrimaryButton}"
+                        Command="{Binding AddUrlCommand}" Margin="0,0,6,0" />
+                <Button Content="Start" Style="{StaticResource ToolbarButton}" Command="{Binding StartSelectedCommand}" />
+                <Button Content="Pause" Style="{StaticResource ToolbarButton}" Command="{Binding PauseSelectedCommand}" />
+                <Button Content="Resume" Style="{StaticResource ToolbarButton}" Command="{Binding ResumeSelectedCommand}" />
+                <Button Content="Cancel" Style="{StaticResource ToolbarButton}" Command="{Binding CancelSelectedCommand}" />
+                <Button Content="Remove" Style="{StaticResource ToolbarButton}" Command="{Binding RemoveSelectedCommand}" />
+                <Button Content="Clear completed" Style="{StaticResource ToolbarButton}" Command="{Binding ClearCompletedCommand}" />
+                <Button Content="Settings" Style="{StaticResource ToolbarButton}" Command="{Binding OpenSettingsCommand}" Margin="12,0,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Main area: navigation + download list -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+                <ListBox ItemsSource="{Binding NavigationItems}"
+                         SelectedItem="{Binding SelectedNav}"
+                         BorderThickness="0" FontSize="13" Padding="4">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="10,8" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </Border>
+
+            <Grid Grid.Column="1">
+                <ListView ItemsSource="{Binding FilteredItems}"
+                          SelectedItem="{Binding SelectedItem}"
+                          SelectionMode="Single" FontSize="12">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="File name" Width="240" DisplayMemberBinding="{Binding FileName}" />
+                            <GridViewColumn Header="Status" Width="90" DisplayMemberBinding="{Binding StatusText}" />
+                            <GridViewColumn Header="Progress" Width="180">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <ProgressBar Value="{Binding ProgressPercent}" Maximum="100" Height="14" MinWidth="140" />
+                                            <TextBlock Text="{Binding ProgressText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Speed" Width="90" DisplayMemberBinding="{Binding SpeedText}" />
+                            <GridViewColumn Header="Size" Width="95" DisplayMemberBinding="{Binding SizeText}" />
+                            <GridViewColumn Header="Downloaded" Width="95" DisplayMemberBinding="{Binding DownloadedText}" />
+                            <GridViewColumn Header="Remaining" Width="85" DisplayMemberBinding="{Binding RemainingText}" />
+                            <GridViewColumn Header="Actions" Width="290">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Start" Command="{Binding StartCommand}" Margin="0,0,4,0" Padding="6,2" />
+                                            <Button Content="Pause" Command="{Binding PauseCommand}" Margin="0,0,4,0" Padding="6,2" />
+                                            <Button Content="Resume" Command="{Binding ResumeCommand}" Margin="0,0,4,0" Padding="6,2" />
+                                            <Button Content="Cancel" Command="{Binding CancelCommand}" Margin="0,0,4,0" Padding="6,2" />
+                                            <Button Content="Remove" Command="{Binding RemoveCommand}" Padding="6,2" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+
+                <!-- Empty state (covers the list when the current filter has no items) -->
+                <Border Background="White"
+                        Visibility="{Binding HasEmptyState, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding EmptyStateMessage}" TextWrapping="Wrap"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               TextAlignment="Center" FontSize="14" Foreground="#666666" />
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- Bottom: live speed graph + overall statistics -->
+        <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="10,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <controls:SpeedGraphControl Grid.Column="0" Height="80"
+                    Samples="{Binding SpeedSamples}" MaxValue="{Binding SpeedGraphMax}" />
+                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" MinWidth="220">
+                    <TextBlock FontSize="12"><Run Text="Total downloaded: " FontWeight="Bold" /><Run Text="{Binding TotalDownloadedText}" /></TextBlock>
+                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Current speed: " FontWeight="Bold" /><Run Text="{Binding CurrentSpeedText}" /></TextBlock>
+                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Active downloads: " FontWeight="Bold" /><Run Text="{Binding ActiveDownloadCount}" /></TextBlock>
+                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Downloads: " FontWeight="Bold" /><Run Text="{Binding TotalCount}" /></TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AiDownloadManager.Application/AiDownloadManager.Application.csproj" />
+    <Project Path="src/AiDownloadManager.Benchmark/AiDownloadManager.Benchmark.csproj" />
+    <Project Path="src/AiDownloadManager.Core/AiDownloadManager.Core.csproj" />
+    <Project Path="src/AiDownloadManager.Engine/AiDownloadManager.Engine.csproj" />
+    <Project Path="src/AiDownloadManager.Infrastructure/AiDownloadManager.Infrastructure.csproj" />
+    <Project Path="src/AiDownloadManager.Presentation/AiDownloadManager.Presentation.csproj" />
+    <Project Path="src/AiDownloadManager.Protocols/AiDownloadManager.Protocols.csproj" />
+    <Project Path="src/AiDownloadManager.Prototype/AiDownloadManager.Prototype.csproj" />
+    <Project Path="src/AiDownloadManager.TestServer/AiDownloadManager.TestServer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AiDownloadManager.Engine.Tests/AiDownloadManager.Engine.Tests.csproj" />
+    <Project Path="tests/AiDownloadManager.TestRunner/AiDownloadManager.TestRunner.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Authors>Ai Download Manager Contributors</Authors>
+    <Copyright>Copyright (c) Ai Download Manager Contributors. Licensed under GPL-3.0.</Copyright>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+</Project>

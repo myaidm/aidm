@@ -1,0 +1,37 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+## Build outputs
+*.dll
+*.exe
+*.pdb
+
+## Test / prototype work files (regenerated locally)
+aidm-phase0/
+aidm-tests-*/
+aidm-journal-*/
+TestResults/
+*.trx
+*.db-shm
+*.db-wal
+
+## NuGet
+*.nupkg
+packages/
+
+## OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+## Editor
+*.swp
+*~
+
+aidm/
+
+aidm/

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AiDownloadManager.Application\AiDownloadManager.Application.csproj" />
+    <ProjectReference Include="..\AiDownloadManager.Core\AiDownloadManager.Core.csproj" />
+    <ProjectReference Include="..\AiDownloadManager.Engine\AiDownloadManager.Engine.csproj" />
+    <ProjectReference Include="..\AiDownloadManager.Infrastructure\AiDownloadManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\AiDownloadManager.Protocols\AiDownloadManager.Protocols.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+</Project>

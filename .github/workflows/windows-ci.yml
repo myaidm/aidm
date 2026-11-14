@@ -1,0 +1,65 @@
+name: Windows CI
+
+# Builds the FULL solution on Windows — including the WPF presentation
+# project, which cannot build on Linux — and runs the standard test
+# suite with `dotnet test` (which needs .NET TCP, available on the
+# Windows runner but blocked in the restricted Muse sandbox).
+#
+# Status: authored, NOT yet executed. This repository has no git remote
+# configured in the development environment, so the workflow cannot run
+# here. It runs automatically once the repo is pushed to GitHub.
+# Until a green run exists, the WPF build and `dotnet test` are BLOCKED
+# (not PASS) — see PHASE_1_PROGRESS.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    # A hung run should fail fast instead of burning the 6 h default.
+    timeout-minutes: 30
+
+    # Short TEMP keeps the Unix-domain-socket paths the integration
+    # tests use (Path.GetTempPath() + guid + ".sock") well under
+    # Windows' ~108-character sun_path limit. Without this they land
+    # around 99 characters under the default %TEMP% — inside the
+    # limit, but with almost no margin.
+    env:
+      TEMP: ${{ runner.temp }}
+      TMP: ${{ runner.temp }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore solution
+        run: dotnet restore AiDownloadManager.slnx
+
+      - name: Build full solution (including WPF)
+        run: dotnet build AiDownloadManager.slnx -c Release --no-restore
+
+      - name: Run automated tests (dotnet test)
+        run: dotnet test tests/AiDownloadManager.Engine.Tests/AiDownloadManager.Engine.Tests.csproj -c Release --no-build --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/test-results.trx"
+
+      # 100 MB acceptance smoke run against the local deterministic test
+      # server. The prototype uses a Unix domain socket, which .NET
+      # supports on Windows 10 (1803+) and Windows Server 2022.
+      - name: Acceptance smoke run (100 MB, local server, SHA-256 verified)
+        run: dotnet run --project src/AiDownloadManager.Prototype -c Release --no-build -- --size-mb 100 --connections 8 --work-dir "$env:RUNNER_TEMP\aidm-ci"
