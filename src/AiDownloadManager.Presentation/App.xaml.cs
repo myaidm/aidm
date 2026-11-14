@@ -21,6 +21,13 @@ public partial class App : System.Windows.Application
 {
     private SettingsStore? _settingsStore;
 
+    // Distinct unhandled errors already shown to the user this session.
+    // A recurring fault (for example a timer tick that throws every
+    // second) must not produce a dialog per occurrence: the first
+    // occurrence is shown and logged, later identical ones are logged
+    // only. A different error still gets its own dialog.
+    private readonly HashSet<string> _reportedErrors = new(StringComparer.Ordinal);
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -60,6 +67,7 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
+            LogUnhandledException(ex);
             System.Windows.MessageBox.Show(
                 $"Ai Download Manager could not start:\n\n{ex.Message}",
                 "Ai Download Manager", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -70,9 +78,39 @@ public partial class App : System.Windows.Application
     private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
         // A single failure must never take the whole application down.
-        System.Windows.MessageBox.Show(
-            $"An unexpected error occurred:\n\n{e.Exception.Message}",
-            "Ai Download Manager", MessageBoxButton.OK, MessageBoxImage.Error);
+        // Binding and configuration faults are recoverable: they are
+        // logged in full and shown at most once per distinct error, so
+        // a recurring fault cannot spam the user with dialogs.
+        var ex = e.Exception;
+        LogUnhandledException(ex);
+        var key = ex.GetType().FullName + "|" + ex.Message;
+        if (_reportedErrors.Add(key))
+        {
+            System.Windows.MessageBox.Show(
+                $"An unexpected error occurred:\n\n{ex.Message}",
+                "Ai Download Manager", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
         e.Handled = true;
+    }
+
+    /// <summary>Appends the full exception (type, message, stack trace) to
+    /// %LOCALAPPDATA%\AiDownloadManager\error.log. Best-effort: logging
+    /// must never make a bad situation worse, so any failure is swallowed.
+    /// A fault the user dismisses is still diagnosable from this file.</summary>
+    private static void LogUnhandledException(Exception ex)
+    {
+        try
+        {
+            var logPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "AiDownloadManager", "error.log");
+            Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+            File.AppendAllText(logPath,
+                $"[{DateTimeOffset.UtcNow:O}] {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}");
+        }
+        catch
+        {
+            // Logging is best-effort only.
+        }
     }
 }

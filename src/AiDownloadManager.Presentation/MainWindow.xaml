@@ -60,7 +60,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Grid>
-                                            <ProgressBar Value="{Binding ProgressPercent}" Maximum="100" Height="14" MinWidth="140" />
+                                            <ProgressBar Value="{Binding ProgressPercent, Mode=OneWay}" Maximum="100" Height="14" MinWidth="140" />
                                             <TextBlock Text="{Binding ProgressText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />
                                         </Grid>
                                     </DataTemplate>
@@ -107,10 +107,10 @@
                 <controls:SpeedGraphControl Grid.Column="0" Height="80"
                     Samples="{Binding SpeedSamples}" MaxValue="{Binding SpeedGraphMax}" />
                 <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" MinWidth="220">
-                    <TextBlock FontSize="12"><Run Text="Total downloaded: " FontWeight="Bold" /><Run Text="{Binding TotalDownloadedText}" /></TextBlock>
-                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Current speed: " FontWeight="Bold" /><Run Text="{Binding CurrentSpeedText}" /></TextBlock>
-                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Active downloads: " FontWeight="Bold" /><Run Text="{Binding ActiveDownloadCount}" /></TextBlock>
-                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Downloads: " FontWeight="Bold" /><Run Text="{Binding TotalCount}" /></TextBlock>
+                    <TextBlock FontSize="12"><Run Text="Total downloaded: " FontWeight="Bold" /><Run Text="{Binding TotalDownloadedText, Mode=OneWay}" /></TextBlock>
+                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Current speed: " FontWeight="Bold" /><Run Text="{Binding CurrentSpeedText, Mode=OneWay}" /></TextBlock>
+                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Active downloads: " FontWeight="Bold" /><Run Text="{Binding ActiveDownloadCount, Mode=OneWay}" /></TextBlock>
+                    <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Downloads: " FontWeight="Bold" /><Run Text="{Binding TotalCount, Mode=OneWay}" /></TextBlock>
                 </StackPanel>
             </Grid>
         </Border>
