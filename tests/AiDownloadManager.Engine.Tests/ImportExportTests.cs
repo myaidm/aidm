@@ -259,7 +259,7 @@ public class ImportExportTests : IAsyncLifetime
         var result = JobImportExport.ParseJobsFromJson(json);
 
         Assert.True(result.Success, string.Join("; ", result.Errors));
-        Assert.Equal(1, result.Imported.Count);
+        Assert.Single(result.Imported);
         var job = result.Imported[0];
         Assert.Null(job.TotalBytes);
         Assert.Null(job.ExpectedSha256);
@@ -380,16 +380,21 @@ public class ImportExportTests : IAsyncLifetime
         // A classic spreadsheet-formula injection payload. It must
         // survive export/import byte-for-byte as data; this code never
         // evaluates it, and the exporter quotes it so it stays one
-        // CSV field.
-        var hostile = Job(dest: "=cmd|'/C calc'!A0");
-        var csv = JobImportExport.ExportJobsToCsv(new[] { hostile });
+        // CSV field. The "|" in the classic DDE payload is not a valid
+        // Windows path character, so on Windows the equivalent payload
+        // omits it; the payload still starts with "=" and names the
+        // same calc command, so the injection test stays meaningful.
+        var hostile = OperatingSystem.IsWindows()
+            ? "=cmd'/C calc'!A0"
+            : "=cmd|'/C calc'!A0";
+        var csv = JobImportExport.ExportJobsToCsv(new[] { Job(dest: hostile) });
 
-        Assert.Contains("\"=cmd|'/C calc'!A0\"", csv);
+        Assert.Contains("\"" + hostile + "\"", csv);
 
         var result = JobImportExport.ParseJobsFromCsv(csv);
         Assert.True(result.Success, string.Join("; ", result.Errors));
-        Assert.Equal(1, result.Imported.Count);
-        Assert.Equal("=cmd|'/C calc'!A0", result.Imported[0].DestinationPath);
+        Assert.Single(result.Imported);
+        Assert.Equal(hostile, result.Imported[0].DestinationPath);
     }
 
     [Fact]

@@ -69,9 +69,13 @@ public class AntivirusScannerTests : IAsyncLifetime
             // A .cmd file cannot be executed directly without a shell,
             // so the configured "scanner" is cmd.exe with a template
             // that runs the stub. The hook still builds the argument
-            // list and invokes the process without a shell.
+            // list and invokes the process without a shell. A custom
+            // template is appended AFTER the stub invocation: without
+            // the "/c <stub>" prefix, cmd.exe would receive the extra
+            // flags as its own arguments and the stub would never run
+            // (cmd starts interactively and exits 0 with no output).
             scannerPath = "cmd.exe";
-            argumentsTemplate ??= $"/c \"{stubPath}\" \"{{file}}\"";
+            argumentsTemplate = $"/c \"{stubPath}\" " + (argumentsTemplate ?? "\"{file}\"");
         }
         else
         {
@@ -255,8 +259,8 @@ public class AntivirusScannerTests : IAsyncLifetime
         Assert.False(File.Exists(marker),
             "The downloaded file must never be executed by the scan hook.");
         var log = ReadLog(stub.LogPath);
-        Assert.Single(log.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Where(line => line.StartsWith("CALL:", StringComparison.Ordinal)));
+        Assert.Single(log.Split('\n', StringSplitOptions.RemoveEmptyEntries),
+            line => line.StartsWith("CALL:", StringComparison.Ordinal));
         Assert.Contains(target, log);
     }
 

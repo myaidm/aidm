@@ -574,8 +574,12 @@ public sealed class DeterministicFtpServer : IAsyncDisposable
         san.AddIpAddress(IPAddress.IPv6Loopback);
         san.AddIpAddress(IPAddress.Loopback);
         request.CertificateExtensions.Add(san.Build());
-        return request.CreateSelfSigned(
+        var fresh = request.CreateSelfSigned(
             DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
+        // Same Schannel/ephemeral-key reason as TestCertificates: the
+        // freshly created certificate cannot be used for SslStream
+        // server authentication on Windows without a PKCS#12 round-trip.
+        return TestCertificates.ToServerCertificate(fresh);
     }
 
     public async ValueTask DisposeAsync()

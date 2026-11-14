@@ -156,12 +156,51 @@ public sealed class FtpTransport : ITransport
         try
         {
             await RequireOkAsync(client, "TYPE I", cancellationToken);
+
+            // FTP data connections carry no length framing: the end of
+            // a transfer is signalled only by the server closing the
+            // connection, so a server that closes early (dropped
+            // connection) otherwise looks like a clean end-of-data and
+            // a truncated download is returned as success. Ask for the
+            // size first when the server supports SIZE, and verify the
+            // byte count: a short transfer is Transient, so the engine
+            // retries it. When SIZE is unsupported the size stays
+            // unknown and the download proceeds as before (the
+            // engine's SHA-256 check remains the safety net).
+            var expected = await TryGetSizeAsync(client, parsed, cancellationToken);
             await using var stream = await OpenReadAsync(client, parsed, 0, 0, cancellationToken);
-            await ReadToEndAsync(stream, onChunk, cancellationToken);
+            var bytesRead = await ReadToEndAsync(stream, onChunk, cancellationToken);
+            if (expected is not null && bytesRead != expected.Value)
+            {
+                throw new TransportException(TransportFailureKind.Transient,
+                    $"FTP transfer truncated for {parsed.Redacted}: got {bytesRead} of {expected.Value} bytes");
+            }
         }
         finally
         {
             await DisconnectQuietlyAsync(client);
+        }
+    }
+
+    /// <summary>
+    /// Best-effort SIZE: returns the file size when the server answers
+    /// 213, or null when SIZE is unsupported or fails. Existence is
+    /// established by RETR itself, so a SIZE failure here is never
+    /// fatal and never masks the real download error.
+    /// </summary>
+    private static async Task<long?> TryGetSizeAsync(
+        AsyncFtpClient client, ParsedUrl parsed, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var reply = await ExecuteAsync(client, $"SIZE {parsed.Path}", cancellationToken);
+            if (reply.Code == "213" && long.TryParse(reply.Message.Trim(), out var size) && size >= 0)
+                return size;
+            return null;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return null;
         }
     }
 
@@ -457,7 +496,8 @@ public sealed class FtpTransport : ITransport
         }
     }
 
-    private static async Task ReadToEndAsync(
+    /// <summary>Reads the stream to end, invoking the chunk callback; returns the total bytes read.</summary>
+    private static async Task<long> ReadToEndAsync(
         Stream stream,
         Func<ReadOnlyMemory<byte>, long, Task> onChunk,
         CancellationToken cancellationToken)
@@ -472,6 +512,7 @@ public sealed class FtpTransport : ITransport
                 await onChunk(buffer.AsMemory(0, read), offset);
                 offset += read;
             }
+            return offset;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

@@ -45,6 +45,31 @@ public static class TestCertificates
         request.CertificateExtensions.Add(san.Build());
 
         var now = DateTimeOffset.UtcNow;
-        return request.CreateSelfSigned(now.AddDays(-1), now.AddDays(1));
+        var fresh = request.CreateSelfSigned(now.AddDays(-1), now.AddDays(1));
+        return ToServerCertificate(fresh);
+    }
+
+    /// <summary>
+    /// Makes a freshly created certificate usable as a TLS server
+    /// certificate on every platform. <see cref="CertificateRequest.CreateSelfSigned"/>
+    /// produces a certificate whose private key is ephemeral; on
+    /// Windows, Schannel (which backs <see cref="System.Net.Security.SslStream"/>)
+    /// cannot use that ephemeral key — server authentication fails with
+    /// SEC_E_NO_CREDENTIALS and the handshake dies before any
+    /// certificate validation runs, so clients see a bare transport
+    /// failure instead of a certificate error. Round-tripping through
+    /// PKCS#12 gives the certificate a persisted key that Schannel can
+    /// use (the key material is deleted when the returned certificate
+    /// is disposed). The thumbprint is unchanged: it covers only the
+    /// public certificate, so thumbprint pinning is unaffected. The
+    /// same round-trip is harmless on Linux (OpenSSL), where the
+    /// ephemeral key already works.
+    /// </summary>
+    internal static X509Certificate2 ToServerCertificate(X509Certificate2 fresh)
+    {
+        using (fresh)
+        {
+            return X509CertificateLoader.LoadPkcs12(fresh.Export(X509ContentType.Pkcs12), null);
+        }
     }
 }
